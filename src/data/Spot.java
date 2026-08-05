@@ -24,13 +24,17 @@ public class Spot {
         return true;
     }
 
+    public void deleteReservation(Reservation reservation) {
+        reservations.remove(reservation);
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Parking Spot Type: ").append(type).append("\n").append("Reservations: ");
+        sb.append("Parking Spot Type: ").append(type).append("\n").append("Reservations:");
 
-        if (reservations.isEmpty()) sb.append("None");
-        reservations.forEach(res -> sb.append("\n").append(res.toString(false, true)));
+        if (reservations.isEmpty()) sb.append(" None");
+        reservations.forEach(res -> sb.append("\n\n").append(res.toString(false, true)));
 
         return sb.toString();
     }

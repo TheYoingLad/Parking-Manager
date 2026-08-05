@@ -189,8 +189,52 @@ public class Manager {
     private void deleteReservation(Scanner scanner) {
         System.out.println();
         System.out.println("=== Delete Reservation ===");
-        // TODO: implement deletion logic
-        System.out.println("[Stub] Reservation deletion not yet implemented.");
+
+        String licencePlate = null;
+        while (licencePlate == null) {
+            System.out.print("Enter licence plate number: ");
+            licencePlate = scanner.nextLine().trim().toUpperCase();
+            if (licencePlate.isEmpty()) {
+                licencePlate = null;
+                System.out.println("[!] Licence plate number must be non-empty. Please try again.\n");
+            }
+        }
+
+        if (!reservationMap.containsKey(licencePlate)) {
+            System.out.println("No reservation found for this vehicle.");
+            return;
+        }
+
+        List<Reservation> reservations = reservationMap.get(licencePlate);
+        int spot = 0;
+        while (spot == 0) {
+            System.out.println("Reservations for this vehicle:");
+            for (int i = 0; i < reservations.size(); i++) {
+                System.out.println(i + 1 + ".");
+                System.out.println(reservations.get(i).toString(true, false));
+            }
+
+            System.out.print("Enter reservation number (1 - " + reservations.size() + "): ");
+            String input = scanner.nextLine().trim();
+
+            try {
+                spot = Integer.parseInt(input);
+            } catch (NumberFormatException e) {
+                System.out.println("[!] Invalid number. Please try again.\n");
+                continue;
+            }
+
+            if (spot < 1 || spot > reservations.size()) {
+                spot = 0;
+                System.out.println("[!] Invalid option. Please try again.\n");
+            }
+        }
+
+        Reservation toDelete = reservations.get(spot - 1);
+        reservations.remove(spot - 1);
+        if (reservations.isEmpty()) reservationMap.remove(licencePlate);
+        spots[toDelete.getSpotNumber() - 1].deleteReservation(toDelete);
+        System.out.println("Reservation successfully deleted.");
     }
 
     /**
