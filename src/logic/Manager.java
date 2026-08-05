@@ -5,6 +5,9 @@ import data.Spot;
 import data.TimeInterval;
 import data.Type;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -17,6 +20,9 @@ import java.util.Scanner;
 
 public class Manager {
 
+    private static final String SAVE_FILE = "parking_state.txt";
+    private static final String DEFAULT_STATE = "default_state.txt";
+
     private final Spot[] spots = new Spot[10];
     private final Map<String, List<Reservation>> reservationMap = new HashMap<>();
 
@@ -24,11 +30,9 @@ public class Manager {
         Scanner scanner = new Scanner(System.in);
         boolean running = true;
 
-        // init
-        for (int i = 0; i < spots.length; i++) {
-            spots[i] = new Spot(Type.STANDARD);
-        }
-        spots[0] = new Spot(Type.DISABLED);
+        // initialization
+        load();
+        save();
 
         System.out.println("=================================");
         System.out.println("      Parking Manager CLI        ");
@@ -44,7 +48,8 @@ public class Manager {
                 case "2" -> makeReservation(scanner);
                 case "3" -> deleteReservation(scanner);
                 case "4" -> showParkingSpotDetails(scanner);
-                case "5" -> {
+                case "5" -> resetState();
+                case "6" -> {
                     running = false;
                     System.out.println("Goodbye!");
                 }
@@ -65,7 +70,8 @@ public class Manager {
         System.out.println("2. Make Reservation");
         System.out.println("3. Delete Reservation");
         System.out.println("4. Show Parking Spot Details");
-        System.out.println("5. Exit");
+        System.out.println("5. Reset State");
+        System.out.println("6. Exit");
     }
 
     // -------------------------------------------------------------------------
@@ -82,7 +88,8 @@ public class Manager {
         System.out.println("2. Make Reservation             - Reserve an available parking spot.");
         System.out.println("3. Delete Reservation           - Cancel an existing reservation.");
         System.out.println("4. Show Parking Spot Details    - Display information about a specific spot.");
-        System.out.println("5. Exit                         - Quit the application.");
+        System.out.println("5. Reset State                  - Reset state to default.");
+        System.out.println("6. Exit                         - Quit the application.");
     }
 
     /**
@@ -179,7 +186,8 @@ public class Manager {
             }
         }
 
-        System.out.println("Reservation successful! Details:");
+        save();
+        System.out.println("[✓] Reservation successful! Details:");
         System.out.println(reservation.toString(true, true));
     }
 
@@ -201,7 +209,7 @@ public class Manager {
         }
 
         if (!reservationMap.containsKey(licencePlate)) {
-            System.out.println("No reservation found for this vehicle.");
+            System.out.println("[-] No reservation found for this vehicle.");
             return;
         }
 
@@ -234,7 +242,8 @@ public class Manager {
         reservations.remove(spot - 1);
         if (reservations.isEmpty()) reservationMap.remove(licencePlate);
         spots[toDelete.getSpotNumber() - 1].deleteReservation(toDelete);
-        System.out.println("Reservation successfully deleted.");
+        save();
+        System.out.println("[✓] Reservation successfully deleted.");
     }
 
     /**
@@ -262,7 +271,69 @@ public class Manager {
             }
         }
 
-        System.out.println("Details of spot #" + spot);
+        System.out.println("[✓] Details of spot #" + spot + ":");
         System.out.println(spots[spot - 1]);
+    }
+
+    /**
+     * Resets the current state to the default defined in {@value #DEFAULT_STATE}.
+     */
+    private void resetState() {
+        try {
+            Files.copy(Path.of(DEFAULT_STATE), Path.of(SAVE_FILE));
+            load();
+            save();
+            System.out.println("[✓] State reset successful.");
+        } catch (IOException e) {
+            System.out.println("[!] Failed to reset state: " + e.getMessage());
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Save / Load
+    // -------------------------------------------------------------------------
+
+    /**
+     * Saves the current state to {@value #SAVE_FILE}.
+     */
+    private void save() {
+        try {
+            Serializer.save(spots, SAVE_FILE);
+        } catch (IOException e) {
+            System.out.println("[!] Failed to save state: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Loads state from {@value #SAVE_FILE}.
+     */
+    private void load() {
+        try {
+            System.arraycopy(Serializer.load(SAVE_FILE), 0, spots, 0, spots.length);
+        } catch (Exception e1) {
+            System.out.println("[!] An error occurred during loading: " + e1.getMessage());
+            System.out.println("Loading default state...");
+            try {
+                System.arraycopy(Serializer.load(DEFAULT_STATE), 0, spots, 0, spots.length);
+            } catch (Exception e2) {
+                System.out.println("[!] An error occurred during loading of the default state: " + e2.getMessage());
+                System.out.println("Loading empty state...");
+
+                for (int i = 0; i < spots.length; i++) {
+                    spots[i] = new Spot(Type.STANDARD);
+                }
+                spots[0] = new Spot(Type.DISABLED);
+            }
+        }
+
+        // rebuild the reservation map from the spot data
+        reservationMap.clear();
+        for (Spot spot : spots) {
+            for (Reservation r : spot.reservations()) {
+                reservationMap
+                        .computeIfAbsent(r.getLicencePlate(), _ -> new ArrayList<>())
+                        .add(r);
+            }
+        }
     }
 }

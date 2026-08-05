@@ -1,14 +1,25 @@
 package data;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-public class Spot {
-    private final Type type;
-    private final List<Reservation> reservations = new ArrayList<>();
-
+public record Spot(Type type, List<Reservation> reservations) {
     public Spot(Type type) {
+        this(type, new ArrayList<>());
+    }
+
+    public Spot(Type type, List<Reservation> reservations) {
         this.type = type;
+        this.reservations = new ArrayList<>(reservations);
+    }
+
+    /**
+     * Returns an unmodifiable view of this spot's reservations (used for serialization).
+     */
+    @Override
+    public List<Reservation> reservations() {
+        return Collections.unmodifiableList(reservations);
     }
 
     public boolean makeReservation(Reservation incomingReservation) {
