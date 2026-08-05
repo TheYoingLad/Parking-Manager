@@ -1,16 +1,34 @@
 package logic;
 
+import data.Reservation;
 import data.Spot;
+import data.TimeInterval;
+import data.Type;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Scanner;
 
 public class Manager {
 
     private final Spot[] spots = new Spot[10];
+    private final Map<String, List<Reservation>> reservationMap = new HashMap<>();
 
     public void start() {
         Scanner scanner = new Scanner(System.in);
         boolean running = true;
+
+        // init
+        for (int i = 0; i < spots.length; i++) {
+            spots[i] = new Spot(Type.STANDARD);
+        }
+        spots[0] = new Spot(Type.DISABLED);
 
         System.out.println("=================================");
         System.out.println("      Parking Manager CLI        ");
@@ -73,8 +91,96 @@ public class Manager {
     private void makeReservation(Scanner scanner) {
         System.out.println();
         System.out.println("=== Make Reservation ===");
-        // TODO: implement reservation logic
-        System.out.println("[Stub] Reservation creation not yet implemented.");
+        String input;
+
+        Type type = null;
+        while (type == null) {
+            System.out.println("Do you require a special parking spot?");
+            System.out.println("1. Yes");
+            System.out.println("2. No");
+            System.out.print("Enter your choice: ");
+            input = scanner.nextLine().trim();
+
+            switch (input) {
+                case "1" -> {
+                    while (type == null) {
+                        System.out.println("Please choose from the following types:");
+                        System.out.println("1. Disabled");
+                        System.out.println("2. Family (at least 3 children)");
+                        System.out.print("Enter your choice: ");
+                        input = scanner.nextLine().trim();
+
+                        switch (input) {
+                            case "1" -> type = Type.DISABLED;
+                            case "2" -> type = Type.FAMILY;
+                            default -> System.out.println("[!] Invalid option. Please try again.\n");
+                        }
+                    }
+                }
+                case "2" -> type = Type.STANDARD;
+                default -> System.out.println("[!] Invalid option. Please try again.\n");
+            }
+        }
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        LocalDateTime from = null;
+        while (from == null) {
+            System.out.print("Enter arrival date (yyyy-MM-dd HH:mm): ");
+            input = scanner.nextLine().trim();
+            try {
+                from = LocalDateTime.parse(input, formatter);
+            } catch (DateTimeParseException e) {
+                System.out.println("[!] Invalid format. Please try again.\n");
+            }
+        }
+
+        LocalDateTime to = null;
+        while (to == null) {
+            System.out.print("Enter departure date (yyyy-MM-dd HH:mm): ");
+            input = scanner.nextLine().trim();
+            try {
+                to = LocalDateTime.parse(input, formatter);
+            } catch (DateTimeParseException e) {
+                System.out.println("[!] Invalid format. Please try again.\n");
+            }
+            if (to != null && (to.isBefore(from) || to.isEqual(from))) {
+                to = null;
+                System.out.println("[!] Invalid date, departure must be later than arrival. Please try again.\n");
+            }
+        }
+        TimeInterval interval = new TimeInterval(from, to);
+
+        String licencePlate = null;
+        while (licencePlate == null) {
+            System.out.print("Enter licence plate number: ");
+            licencePlate = scanner.nextLine().trim().toUpperCase();
+            if (licencePlate.isEmpty()) {
+                licencePlate = null;
+                System.out.println("[!] Licence plate number must be non-empty. Please try again.\n");
+            }
+        }
+
+        if (reservationMap.containsKey(licencePlate)) {
+            Optional<Reservation> existingReservation = reservationMap.get(licencePlate).stream().filter(res -> res.getInterval().overlaps(interval)).findAny();
+            if (existingReservation.isPresent()) {
+                System.out.println("[!] An existing reservation for this vehicle overlaps with the given interval. Reservation details:");
+                System.out.println(existingReservation.get().toString(true, true));
+                return;
+            }
+        }
+
+        Reservation reservation = new Reservation(type, interval, licencePlate);
+        for (int i = 0; i < spots.length; i++) {
+            if (spots[i].makeReservation(reservation)) {
+                reservation.setSpotNumber(i + 1);
+                reservationMap.putIfAbsent(licencePlate, new ArrayList<>());
+                reservationMap.get(licencePlate).add(reservation);
+                break;
+            }
+        }
+
+        System.out.println("Reservation successful! Details:");
+        System.out.println(reservation.toString(true, true));
     }
 
     /**
