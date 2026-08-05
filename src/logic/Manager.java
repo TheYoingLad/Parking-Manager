@@ -177,13 +177,19 @@ public class Manager {
         }
 
         Reservation reservation = new Reservation(type, interval, licencePlate);
-        for (int i = 0; i < spots.length; i++) {
+        int i;
+        for (i = 0; i < spots.length; i++) {
             if (spots[i].makeReservation(reservation)) {
                 reservation.setSpotNumber(i + 1);
                 reservationMap.putIfAbsent(licencePlate, new ArrayList<>());
                 reservationMap.get(licencePlate).add(reservation);
                 break;
             }
+        }
+
+        if (i == spots.length){
+            System.out.println("[!] All parking spots are occupied for the interval " + from + " - " + to);
+            return;
         }
 
         save();
