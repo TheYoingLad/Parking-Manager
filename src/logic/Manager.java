@@ -199,7 +199,26 @@ public class Manager {
     private void showParkingSpotDetails(Scanner scanner) {
         System.out.println();
         System.out.println("=== Parking Spot Details ===");
-        // TODO: implement spot detail lookup
-        System.out.println("[Stub] Spot detail display not yet implemented.");
+
+        int spot = 0;
+        while (spot == 0) {
+            System.out.print("Enter parking spot number (1 - 10): ");
+            String input = scanner.nextLine().trim();
+
+            try {
+                spot = Integer.parseInt(input);
+            } catch (NumberFormatException e) {
+                System.out.println("[!] Invalid number. Please try again.\n");
+                continue;
+            }
+
+            if (spot < 1 || spot > 10) {
+                spot = 0;
+                System.out.println("[!] Invalid option. Please try again.\n");
+            }
+        }
+
+        System.out.println("Details of spot #" + spot);
+        System.out.println(spots[spot - 1]);
     }
 }
