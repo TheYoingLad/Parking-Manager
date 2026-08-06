@@ -1,0 +1,14 @@
+Generate a basic cli skeleton with these options: help, make reservation, delete reservation, show parking spot details, exit
+What is a good method of parsing dates from command line input in java?
+how can i add time to the yyyy-MM-dd format?
+Generate json serialization and deserialization for the state of the Manager class. The json should be base64 encoded and stored as a txt file. Also implement a save and load methods. This should take place in a separate Serializer class.
+Rewrite Serializer to use GSON instead
+Generate into default_state.txt.json, a default data set containing 100 reservations, distributed across the spots randomly, with random type requirements, date ranges (between 2026.08.06 and 2026.08.07), plate numbers (have at most 20 unique ones). The format for the json can be found in parking_state.txt.json
+Standard spots are non-exclusive, so they can have non-standard type reservations. Include these as well. Other than this, the data looks good
+Did you also check that every licence plate only has at most one reservation at any given time? (Since a vehicle cant be in two places at once)
+Great. One last step: please encode this dataset in base64 into default_state.txt
+Generate unit tests and integration tests for the project.
+Generate an api description for the manager
+Generate a basic user manual which includes the command to start the program
+the out folder is currently part of gitignore, would that not mess with this? should we remove it from gitignore?
+Please make a .bat or .sh file such that the whole compilation and execution could be achived with only one single command
