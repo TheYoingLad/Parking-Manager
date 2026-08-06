@@ -286,6 +286,7 @@ public class Manager {
      */
     private void resetState() {
         try {
+            Files.delete(Path.of(SAVE_FILE));
             Files.copy(Path.of(DEFAULT_STATE), Path.of(SAVE_FILE));
             load();
             save();
